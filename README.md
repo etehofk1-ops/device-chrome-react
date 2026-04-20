@@ -88,6 +88,23 @@ npm run preview:render
 
 That command refreshes [examples/readme-preview.html](./examples/readme-preview.html), which can be opened directly in a browser before recapturing [media/readme-preview.png](./media/readme-preview.png).
 
+## Live Preview Tool
+
+For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser.
+
+It supports:
+- public site URLs
+- localhost or dev server URLs
+- GitHub Pages-style URLs from repo input
+- a single local HTML file
+- a best-effort static folder preview based on `index.html`
+- shareable presets with query params like `?url=https://your-preview` or `?github=owner/repo`
+
+Notes:
+- Services that block iframe embeds with `X-Frame-Options` or `frame-ancestors` will not render inside the tool.
+- The GitHub converter assumes your repo is published on GitHub Pages.
+- The folder uploader is best for static HTML/CSS/image bundles. JS-heavy apps usually work better through a local dev server URL.
+
 ## Why only two device types?
 
 Because early focus is a feature, not a limitation.
@@ -118,3 +135,4 @@ That is enough to make the positioning clear for a strong v0. More variants can 
 
 This package is unofficial and is not affiliated with Apple or Google.
 It is intended for mockups, previews, marketing pages, and design showcases.
+
