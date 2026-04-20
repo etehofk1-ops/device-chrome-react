@@ -90,7 +90,7 @@ That command refreshes [examples/readme-preview.html](./examples/readme-preview.
 
 ## Live Preview Tool
 
-For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser.
+For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser. Use Load demo for an instant built-in sample before pasting your own URL.
 
 It supports:
 - public site URLs
@@ -135,4 +135,5 @@ That is enough to make the positioning clear for a strong v0. More variants can 
 
 This package is unofficial and is not affiliated with Apple or Google.
 It is intended for mockups, previews, marketing pages, and design showcases.
+
 

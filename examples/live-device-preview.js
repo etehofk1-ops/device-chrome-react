@@ -9,11 +9,43 @@ const statusNode = $("status")
 const openSourceButton = $("openSource")
 const devices = $("devices")
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
+const loadDemoButton = $("loadDemo")
 
 const state = {
   openUrl: "",
   activeBlobUrls: new Set(),
 }
+
+const demo = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      body{min-height:100vh;padding:24px;background:linear-gradient(180deg,#fff8ef 0%,#e8f4ee 100%);color:#102033;display:flex;flex-direction:column;justify-content:space-between}
+      .hero{display:flex;flex-direction:column;gap:14px;padding-top:28px}.tag{width:fit-content;padding:9px 12px;border-radius:999px;background:rgba(16,32,51,.08);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+      h1{margin:0;font-size:38px;line-height:.96;letter-spacing:-.05em;max-width:290px}.sub{margin:0;font-size:16px;line-height:1.45;color:rgba(16,32,51,.72);max-width:300px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{padding:16px;border-radius:22px;background:rgba(255,255,255,.78);box-shadow:0 14px 30px rgba(24,45,71,.08)}.card strong{display:block;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:rgba(16,32,51,.52);margin-bottom:6px}.card span{font-size:18px;font-weight:700;line-height:1.3}
+      .cta{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-radius:24px;background:#102033;color:#fff}.cta b{font-size:20px}.cta small{display:block;opacity:.72;font-size:13px}.btn{padding:12px 16px;border-radius:999px;background:#fff;color:#102033;font-weight:800}
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <div class="tag">Built-in demo</div>
+      <h1>Preview a real page inside device chrome.</h1>
+      <p class="sub">This sample is loaded by the live preview tool itself, so you can confirm the framing flow instantly.</p>
+      <div class="grid">
+        <div class="card"><strong>Input</strong><span>URL, GitHub, HTML, or folder</span></div>
+        <div class="card"><strong>Output</strong><span>iOS and Android previews side by side</span></div>
+      </div>
+    </section>
+    <section class="cta">
+      <div><small>device-chrome-react</small><b>JSX-first device preview</b></div>
+      <div class="btn">Working</div>
+    </section>
+  </body>
+</html>`
 
 const welcome = `<!doctype html>
 <html lang="en">
@@ -32,7 +64,7 @@ const welcome = `<!doctype html>
     <div class="card">
       <div class="tag">Live preview</div>
       <h1>Load a source on the left.</h1>
-      <p>Paste a URL, convert a GitHub repo, or choose local HTML to see it inside both device shells.</p>
+      <p>Paste a URL, convert a GitHub repo, choose local HTML, or hit Load demo.</p>
       <ul>
         <li>Public site or localhost URL</li>
         <li>GitHub Pages-style preview</li>
@@ -68,6 +100,8 @@ function trackBlobFromFile(file) {
 }
 
 function applyPreview(url, message, tone = "ok", openUrl = url) {
+  iosFrame.removeAttribute("srcdoc")
+  androidFrame.removeAttribute("srcdoc")
   iosFrame.src = url
   androidFrame.src = url
   state.openUrl = openUrl || ""
@@ -78,9 +112,13 @@ function applyPreview(url, message, tone = "ok", openUrl = url) {
 function showWelcome() {
   clearBlobs()
   const url = makeHtmlBlob(welcome)
-  applyPreview(url, "Ready. Paste a URL, convert a GitHub repo, or upload local HTML.")
-  openSourceButton.disabled = true
-  state.openUrl = ""
+  applyPreview(url, "Ready. Paste a URL, convert a GitHub repo, upload local HTML, or load the built-in demo.")
+}
+
+function loadBuiltInDemo() {
+  clearBlobs()
+  const url = makeHtmlBlob(demo)
+  applyPreview(url, "Loaded the built-in demo page inside both device shells.", "ok", url)
 }
 
 function looksLikeHost(value) {
@@ -89,12 +127,8 @@ function looksLikeHost(value) {
 
 function toAbsoluteUrl(raw) {
   const value = raw.trim()
-  if (!value) {
-    throw new Error("Enter a URL first.")
-  }
-  if (/^(https?:|file:|blob:|data:)/i.test(value)) {
-    return new URL(value).toString()
-  }
+  if (!value) throw new Error("Enter a URL first.")
+  if (/^(https?:|file:|blob:|data:)/i.test(value)) return new URL(value).toString()
   if (looksLikeHost(value)) {
     const scheme = /^(localhost|127\.0\.0\.1|\d{1,3}(?:\.\d{1,3}){3})/i.test(value) ? "http://" : "https://"
     return new URL(`${scheme}${value}`).toString()
@@ -104,35 +138,21 @@ function toAbsoluteUrl(raw) {
 
 function githubToPages(raw) {
   const value = raw.trim().replace(/\.git$/i, "")
-  if (!value) {
-    throw new Error("Enter a GitHub URL or owner/repo first.")
-  }
-  if (/^https?:\/\/[\w.-]+\.github\.io(?:\/.*)?$/i.test(value)) {
-    return new URL(value).toString()
-  }
+  if (!value) throw new Error("Enter a GitHub URL or owner/repo first.")
+  if (/^https?:\/\/[\w.-]+\.github\.io(?:\/.*)?$/i.test(value)) return new URL(value).toString()
   const short = value.match(/^([\w.-]+)\/([\w.-]+)$/)
   if (short) {
     const owner = short[1]
     const repo = short[2]
-    return repo.toLowerCase() === `${owner.toLowerCase()}.github.io`
-      ? `https://${owner}.github.io/`
-      : `https://${owner}.github.io/${repo}/`
+    return repo.toLowerCase() === `${owner.toLowerCase()}.github.io` ? `https://${owner}.github.io/` : `https://${owner}.github.io/${repo}/`
   }
   const parsed = new URL(toAbsoluteUrl(value))
-  if (parsed.hostname.endsWith("github.io")) {
-    return parsed.toString()
-  }
-  if (parsed.hostname !== "github.com") {
-    throw new Error("Use a GitHub repo URL, a GitHub Pages URL, or owner/repo.")
-  }
+  if (parsed.hostname.endsWith("github.io")) return parsed.toString()
+  if (parsed.hostname !== "github.com") throw new Error("Use a GitHub repo URL, a GitHub Pages URL, or owner/repo.")
   const parts = parsed.pathname.split("/").filter(Boolean)
-  if (parts.length < 2) {
-    throw new Error("GitHub repo URLs should look like github.com/owner/repo.")
-  }
+  if (parts.length < 2) throw new Error("GitHub repo URLs should look like github.com/owner/repo.")
   const [owner, repo] = parts
-  return repo.toLowerCase() === `${owner.toLowerCase()}.github.io`
-    ? `https://${owner}.github.io/`
-    : `https://${owner}.github.io/${repo}/`
+  return repo.toLowerCase() === `${owner.toLowerCase()}.github.io` ? `https://${owner}.github.io/` : `https://${owner}.github.io/${repo}/`
 }
 
 function normalizePath(path) {
@@ -146,9 +166,7 @@ function splitRef(value) {
 
 function isRelativeRef(value) {
   const ref = value.trim()
-  if (!ref || ref.startsWith("#") || ref.startsWith("mailto:") || ref.startsWith("tel:") || ref.startsWith("javascript:")) {
-    return false
-  }
+  if (!ref || ref.startsWith("#") || ref.startsWith("mailto:") || ref.startsWith("tel:") || ref.startsWith("javascript:")) return false
   return !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(ref) && !ref.startsWith("//")
 }
 
@@ -184,15 +202,8 @@ function rewriteCss(text, baseDir, getAssetUrl) {
 async function buildFolderPreview(fileList) {
   const files = Array.from(fileList || [])
   const map = new Map(files.map((file) => [normalizePath(file.webkitRelativePath || file.name), file]))
-  const entry = map.has("index.html")
-    ? "index.html"
-    : map.has("index.htm")
-      ? "index.htm"
-      : Array.from(map.keys()).find((key) => /(?:^|\/)index\.html?$/i.test(key)) || Array.from(map.keys()).find((key) => /\.html?$/i.test(key))
-
-  if (!entry) {
-    throw new Error("Could not find an HTML entry file in that folder.")
-  }
+  const entry = map.has("index.html") ? "index.html" : map.has("index.htm") ? "index.htm" : Array.from(map.keys()).find((key) => /(?:^|\/)index\.html?$/i.test(key)) || Array.from(map.keys()).find((key) => /\.html?$/i.test(key))
+  if (!entry) throw new Error("Could not find an HTML entry file in that folder.")
 
   const cache = new Map()
   let warn = false
@@ -238,20 +249,14 @@ async function buildFolderPreview(fileList) {
 
   if (doc.querySelector('script[type="module"][src]')) warn = true
   const url = makeHtmlBlob(`<!doctype html>\n${doc.documentElement.outerHTML}`)
-  return {
-    url,
-    warn,
-    message: warn
-      ? `Loaded ${entry}. Relative ES module imports may still need a dev server URL.`
-      : `Loaded ${entry} from the selected folder.`,
-  }
+  return { url, warn, message: warn ? `Loaded ${entry}. Relative ES module imports may still need a dev server URL.` : `Loaded ${entry} from the selected folder.` }
 }
 
 function loadUrlFromInput() {
   try {
     clearBlobs()
     const url = toAbsoluteUrl(urlInput.value)
-    applyPreview(url, `Loaded ${url}`, "ok", url)
+    applyPreviewUrl(url, `Loaded ${url}`, "ok", url)
   } catch (error) {
     setStatus(error.message, "warn")
   }
@@ -261,7 +266,7 @@ function loadGithubFromInput() {
   try {
     clearBlobs()
     const url = githubToPages(githubInput.value)
-    applyPreview(url, `Previewing ${url}. If it stays blank, GitHub Pages may not be enabled yet.`, "ok", url)
+    applyPreviewUrl(url, `Previewing ${url}. If it stays blank, GitHub Pages may not be enabled yet.`, "ok", url)
   } catch (error) {
     setStatus(error.message, "warn")
   }
@@ -274,6 +279,7 @@ function setLayout(layout) {
 
 $("loadUrl").addEventListener("click", loadUrlFromInput)
 $("loadGithub").addEventListener("click", loadGithubFromInput)
+loadDemoButton.addEventListener("click", loadBuiltInDemo)
 
 urlInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") loadUrlFromInput()
@@ -324,13 +330,12 @@ layoutButtons.forEach((button) => {
 
 const params = new URLSearchParams(window.location.search)
 const presetLayout = params.get("layout")
-if (["both", "ios", "android"].includes(presetLayout)) {
-  setLayout(presetLayout)
-} else {
-  setLayout("both")
-}
+if (["both", "ios", "android"].includes(presetLayout)) setLayout(presetLayout)
+else setLayout("both")
 
-if (params.get("url")) {
+if (params.get("demo") === "1") {
+  loadBuiltInDemo()
+} else if (params.get("url")) {
   urlInput.value = params.get("url")
   loadUrlFromInput()
 } else if (params.get("github")) {
@@ -339,7 +344,4 @@ if (params.get("url")) {
 } else {
   showWelcome()
 }
-
-
-
 
