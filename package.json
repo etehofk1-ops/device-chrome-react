@@ -1,60 +1,62 @@
-{
-    "name": "device-chrome-react",
-    "version": "0.1.0",
-    "description": "Modern, JSX-first iOS and Android device chrome components for React.",
-    "license": "MIT",
-    "private": false,
-    "sideEffects": false,
-    "main": "./dist/index.js",
-    "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.js"
-        }
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
-    "scripts": {
-        "build": "tsup src/index.ts --format esm,cjs --dts",
-        "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-        "typecheck": "tsc --noEmit"
-    },
-    "peerDependencies": {
-        "react": ">=18",
-        "react-dom": ">=18"
-    },
-    "devDependencies": {
-        "@types/react": "^19.2.2",
-        "@types/react-dom": "^19.2.2",
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0",
-        "tsup": "^8.5.0",
-        "typescript": "^5.9.3"
-    },
-    "keywords": [
-        "react",
-        "typescript",
-        "jsx",
-        "device-frame",
-        "device-chrome",
-        "device-mockup",
-        "ios",
-        "android",
-        "mockup",
-        "preview"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/etehofk1-ops/device-chrome-react.git"
-    },
-    "homepage": "https://github.com/etehofk1-ops/device-chrome-react#readme",
-    "bugs": {
-        "url": "https://github.com/etehofk1-ops/device-chrome-react/issues"
-    }
+﻿{
+    "name":  "device-chrome-react",
+    "version":  "0.1.0",
+    "description":  "Modern, JSX-first iOS and Android device chrome components for React.",
+    "license":  "MIT",
+    "private":  false,
+    "sideEffects":  false,
+    "main":  "./dist/index.js",
+    "module":  "./dist/index.mjs",
+    "types":  "./dist/index.d.ts",
+    "exports":  {
+                    ".":  {
+                              "types":  "./dist/index.d.ts",
+                              "import":  "./dist/index.mjs",
+                              "require":  "./dist/index.js"
+                          }
+                },
+    "files":  [
+                  "dist",
+                  "README.md",
+                  "LICENSE"
+              ],
+    "scripts":  {
+                    "build":  "tsup src/index.ts --format esm,cjs --dts",
+                    "dev":  "tsup src/index.ts --format esm,cjs --dts --watch",
+                    "typecheck":  "tsc --noEmit",
+                    "prepack":  "npm run build \u0026\u0026 npm run typecheck",
+                    "preview:render":  "npm run build \u0026\u0026 node scripts/generate-readme-preview.mjs"
+                },
+    "peerDependencies":  {
+                             "react":  "\u003e=18",
+                             "react-dom":  "\u003e=18"
+                         },
+    "devDependencies":  {
+                            "@types/react":  "^19.2.2",
+                            "@types/react-dom":  "^19.2.2",
+                            "react":  "^19.2.0",
+                            "react-dom":  "^19.2.0",
+                            "tsup":  "^8.5.0",
+                            "typescript":  "^5.9.3"
+                        },
+    "keywords":  [
+                     "react",
+                     "typescript",
+                     "jsx",
+                     "device-frame",
+                     "device-chrome",
+                     "device-mockup",
+                     "ios",
+                     "android",
+                     "mockup",
+                     "preview"
+                 ],
+    "repository":  {
+                       "type":  "git",
+                       "url":  "git+https://github.com/etehofk1-ops/device-chrome-react.git"
+                   },
+    "homepage":  "https://github.com/etehofk1-ops/device-chrome-react#readme",
+    "bugs":  {
+                 "url":  "https://github.com/etehofk1-ops/device-chrome-react/issues"
+             }
 }

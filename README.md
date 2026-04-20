@@ -1,8 +1,10 @@
-# device-chrome-react
+﻿# device-chrome-react
 
 Modern, JSX-first iOS and Android device chrome components for React.
 
 `device-chrome-react` is built for landing pages, product showcases, mockups, and live previews where you want to render real React UI inside a device shell instead of dropping in static screenshots.
+
+![device-chrome-react preview](./media/readme-preview.png)
 
 ## Why this exists
 
@@ -74,6 +76,17 @@ export default function Preview() {
   )
 }
 ```
+
+## Repo preview asset
+
+The screenshot above is generated from the actual React components in this repo.
+
+```bash
+npm install
+npm run preview:render
+```
+
+That command refreshes [examples/readme-preview.html](./examples/readme-preview.html), which can be opened directly in a browser before recapturing [media/readme-preview.png](./media/readme-preview.png).
 
 ## Why only two device types?
 
