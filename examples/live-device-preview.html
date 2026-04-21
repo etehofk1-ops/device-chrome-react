@@ -33,10 +33,11 @@
 
         <section class="card">
           <h2>GitHub input</h2>
-          <label for="githubInput">Repo URL or owner/repo</label>
+          <label for="githubInput">Repo URL, blob URL, GitHub Pages URL, or owner/repo</label>
           <input id="githubInput" type="text" placeholder="https://github.com/owner/repo" />
-          <div class="row"><button id="loadGithub" class="secondary">Convert to GitHub Pages</button></div>
-          <p class="hint">Turns <code>owner/repo</code> into <code>https://owner.github.io/repo/</code>.</p>
+          <div class="row"><button id="loadGithub" class="secondary">Load GitHub preview</button></div>
+          <p id="helperStatus" class="hint">Checking whether the local GitHub helper is available...</p>
+          <p class="hint">If `npm run preview:helper` is running, repo URLs can be cloned, installed, built, and served locally before falling back to browser-only GitHub Pages or static HTML detection.</p>
         </section>
 
         <section class="card">
@@ -62,12 +63,12 @@
           </div>
         </section>
 
-        <div id="status" class="status">Ready. Paste a URL, convert a GitHub repo, upload local HTML, or load the built-in demo.</div>
+        <div id="status" class="status">Ready. Paste a URL, load a GitHub repo, upload local HTML, or load the built-in demo.</div>
         <div class="row">
           <button id="openSource" class="secondary" disabled>Open current source</button>
           <button id="reset" class="ghost">Reset</button>
         </div>
-        <p class="hint">Some sites block iframe embeds with <code>X-Frame-Options</code> or <code>frame-ancestors</code>. In that case, use a preview route that allows framing or open the URL in a new tab.</p>
+        <p class="hint">Some services still block iframe embeds with `X-Frame-Options` or `frame-ancestors`. For the broadest GitHub support, run `npm run preview:helper` in this repo and keep the page open while it builds previews.</p>
       </aside>
 
       <main class="stage">

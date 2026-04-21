@@ -90,19 +90,38 @@ That command refreshes [examples/readme-preview.html](./examples/readme-preview.
 
 ## Live Preview Tool
 
-For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser. Use Load demo for an instant built-in sample before pasting your own URL.
+For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser. Use `Load demo` for an instant built-in sample before pasting your own URL.
+
+For broader GitHub repo support, run the optional local helper in a separate terminal:
+
+```bash
+npm install
+npm run preview:helper
+```
+
+That helper listens on `http://127.0.0.1:4312` and lets the browser tool turn a GitHub repo into a local preview by cloning, installing, building, and serving it when possible.
 
 It supports:
 - public site URLs
 - localhost or dev server URLs
-- GitHub Pages-style URLs from repo input
+- GitHub Pages URLs
+- GitHub repo URLs and `owner/repo` shorthand
+- GitHub `blob/.../*.html` file URLs
 - a single local HTML file
 - a best-effort static folder preview based on `index.html`
-- shareable presets with query params like `?url=https://your-preview` or `?github=owner/repo`
+- shareable presets with query params like `?url=https://your-preview`, `?github=owner/repo`, or `?demo=1`
+
+GitHub preview order:
+- if the local helper is running and you paste a repo URL, it first tries `clone -> install -> build -> serve`
+- if you paste a GitHub Pages URL, it loads that directly
+- if you paste a GitHub blob URL to an HTML file, it renders that file through a CDN-backed preview
+- if you paste a repo URL without the helper, it looks for common static HTML entry files such as `dist/index.html`, `build/index.html`, `docs/index.html`, or `index.html`
+- if no static entry is found, it falls back to the inferred GitHub Pages URL
 
 Notes:
 - Services that block iframe embeds with `X-Frame-Options` or `frame-ancestors` will not render inside the tool.
-- The GitHub converter assumes your repo is published on GitHub Pages.
+- The helper path works best for public repos with a standard Node-based build and either a static output directory or a `preview` script.
+- Without the helper, GitHub repo previews work best for public repositories with built static output checked in.
 - The folder uploader is best for static HTML/CSS/image bundles. JS-heavy apps usually work better through a local dev server URL.
 
 ## Why only two device types?
@@ -135,5 +154,3 @@ That is enough to make the positioning clear for a strong v0. More variants can 
 
 This package is unofficial and is not affiliated with Apple or Google.
 It is intended for mockups, previews, marketing pages, and design showcases.
-
-

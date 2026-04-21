@@ -6,15 +6,32 @@ const githubInput = $("githubInput")
 const htmlInput = $("htmlInput")
 const folderInput = $("folderInput")
 const statusNode = $("status")
+const helperStatusNode = $("helperStatus")
 const openSourceButton = $("openSource")
 const devices = $("devices")
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
 const loadDemoButton = $("loadDemo")
 
+const HELPER_ORIGINS = [
+  "http://127.0.0.1:4312",
+  "http://localhost:4312",
+]
+
 const state = {
-  openUrl: "",
   activeBlobUrls: new Set(),
+  openUrl: "",
+  helperOrigin: "",
 }
+
+const GITHUB_ENTRY_CANDIDATES = [
+  "dist/index.html",
+  "build/index.html",
+  "out/index.html",
+  "docs/index.html",
+  "public/index.html",
+  "storybook-static/index.html",
+  "index.html",
+]
 
 const demo = `<!doctype html>
 <html lang="en">
@@ -64,10 +81,10 @@ const welcome = `<!doctype html>
     <div class="card">
       <div class="tag">Live preview</div>
       <h1>Load a source on the left.</h1>
-      <p>Paste a URL, convert a GitHub repo, choose local HTML, or hit Load demo.</p>
+      <p>Paste a URL, load a GitHub repo, choose local HTML, or hit Load demo.</p>
       <ul>
         <li>Public site or localhost URL</li>
-        <li>GitHub Pages-style preview</li>
+        <li>GitHub repo, blob file, or Pages URL</li>
         <li>Single HTML file</li>
         <li>Best-effort static folder preview</li>
       </ul>
@@ -80,17 +97,15 @@ function setStatus(message, tone = "") {
   statusNode.className = `status${tone ? ` ${tone}` : ""}`
 }
 
+function setHelperStatus(message) {
+  if (helperStatusNode) helperStatusNode.textContent = message
+}
+
 function clearBlobs() {
   for (const url of state.activeBlobUrls) {
     URL.revokeObjectURL(url)
   }
   state.activeBlobUrls.clear()
-}
-
-function makeHtmlBlob(html) {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }))
-  state.activeBlobUrls.add(url)
-  return url
 }
 
 function trackBlobFromFile(file) {
@@ -99,7 +114,7 @@ function trackBlobFromFile(file) {
   return url
 }
 
-function applyPreview(url, message, tone = "ok", openUrl = url) {
+function applyUrlPreview(url, message, tone = "ok", openUrl = url) {
   iosFrame.removeAttribute("srcdoc")
   androidFrame.removeAttribute("srcdoc")
   iosFrame.src = url
@@ -109,16 +124,57 @@ function applyPreview(url, message, tone = "ok", openUrl = url) {
   setStatus(message, tone)
 }
 
+function applyHtmlPreview(html, message, tone = "ok", openUrl = "") {
+  iosFrame.removeAttribute("src")
+  androidFrame.removeAttribute("src")
+  iosFrame.srcdoc = html
+  androidFrame.srcdoc = html
+  state.openUrl = openUrl || ""
+  openSourceButton.disabled = !state.openUrl
+  setStatus(message, tone)
+}
+
 function showWelcome() {
   clearBlobs()
-  const url = makeHtmlBlob(welcome)
-  applyPreview(url, "Ready. Paste a URL, convert a GitHub repo, upload local HTML, or load the built-in demo.")
+  applyHtmlPreview(welcome, "Ready. Paste a URL, load a GitHub repo, upload local HTML, or load the built-in demo.")
 }
 
 function loadBuiltInDemo() {
   clearBlobs()
-  const url = makeHtmlBlob(demo)
-  applyPreview(url, "Loaded the built-in demo page inside both device shells.", "ok", url)
+  applyHtmlPreview(demo, "Loaded the built-in demo page inside both device shells.", "ok")
+}
+
+async function fetchWithTimeout(resource, options = {}, timeoutMs = 1500) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(resource, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function detectHelper(force = false) {
+  if (state.helperOrigin && !force) return state.helperOrigin
+
+  setHelperStatus("Checking whether the local GitHub helper is available...")
+
+  for (const origin of HELPER_ORIGINS) {
+    try {
+      const response = await fetchWithTimeout(`${origin}/api/health`, { headers: { Accept: "application/json" } }, 1500)
+      if (!response.ok) continue
+      state.helperOrigin = origin
+      setHelperStatus(`Local GitHub helper detected at ${origin}. Repo URLs can use clone/build/serve mode.`)
+      return origin
+    } catch {
+      // Try the next origin.
+    }
+  }
+
+  state.helperOrigin = ""
+  setHelperStatus("Local helper not detected. Repo URLs will fall back to GitHub Pages or checked-in static HTML previews.")
+  return ""
 }
 
 function looksLikeHost(value) {
@@ -136,27 +192,18 @@ function toAbsoluteUrl(raw) {
   throw new Error("That does not look like a valid URL or hostname.")
 }
 
-function githubToPages(raw) {
-  const value = raw.trim().replace(/\.git$/i, "")
-  if (!value) throw new Error("Enter a GitHub URL or owner/repo first.")
-  if (/^https?:\/\/[\w.-]+\.github\.io(?:\/.*)?$/i.test(value)) return new URL(value).toString()
-  const short = value.match(/^([\w.-]+)\/([\w.-]+)$/)
-  if (short) {
-    const owner = short[1]
-    const repo = short[2]
-    return repo.toLowerCase() === `${owner.toLowerCase()}.github.io` ? `https://${owner}.github.io/` : `https://${owner}.github.io/${repo}/`
-  }
-  const parsed = new URL(toAbsoluteUrl(value))
-  if (parsed.hostname.endsWith("github.io")) return parsed.toString()
-  if (parsed.hostname !== "github.com") throw new Error("Use a GitHub repo URL, a GitHub Pages URL, or owner/repo.")
-  const parts = parsed.pathname.split("/").filter(Boolean)
-  if (parts.length < 2) throw new Error("GitHub repo URLs should look like github.com/owner/repo.")
-  const [owner, repo] = parts
-  return repo.toLowerCase() === `${owner.toLowerCase()}.github.io` ? `https://${owner}.github.io/` : `https://${owner}.github.io/${repo}/`
+function encodePath(path) {
+  return path.split("/").filter(Boolean).map(encodeURIComponent).join("/")
 }
 
 function normalizePath(path) {
-  return path.replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\/+/, "")
+  return String(path || "").replace(/\\/g, "/").replace(/^\.\//, "").replace(/^\/+/, "").replace(/\/+/g, "/")
+}
+
+function dirname(path) {
+  const parts = normalizePath(path).split("/").filter(Boolean)
+  parts.pop()
+  return parts.join("/")
 }
 
 function splitRef(value) {
@@ -168,12 +215,6 @@ function isRelativeRef(value) {
   const ref = value.trim()
   if (!ref || ref.startsWith("#") || ref.startsWith("mailto:") || ref.startsWith("tel:") || ref.startsWith("javascript:")) return false
   return !/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(ref) && !ref.startsWith("//")
-}
-
-function dirname(path) {
-  const parts = normalizePath(path).split("/")
-  parts.pop()
-  return parts.join("/")
 }
 
 function resolvePath(baseDir, ref) {
@@ -199,10 +240,299 @@ function rewriteCss(text, baseDir, getAssetUrl) {
   })
 }
 
+function prefixPath(prefix, path) {
+  const cleanPrefix = normalizePath(prefix)
+  const cleanPath = normalizePath(path)
+  if (!cleanPrefix) return cleanPath
+  if (!cleanPath) return cleanPrefix
+  return `${cleanPrefix}/${cleanPath}`
+}
+
+function buildCdnUrl(owner, repo, branch, path = "") {
+  const repoPath = path ? `/${encodePath(path)}` : ""
+  return `https://cdn.jsdelivr.net/gh/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}@${encodeURIComponent(branch)}${repoPath}`
+}
+
+function inferPagesUrl(owner, repo) {
+  return repo.toLowerCase() === `${owner.toLowerCase()}.github.io`
+    ? `https://${owner}.github.io/`
+    : `https://${owner}.github.io/${repo}/`
+}
+
+function parseGitHubInput(raw) {
+  const value = raw.trim().replace(/\.git$/i, "")
+  if (!value) throw new Error("Enter a GitHub URL or owner/repo first.")
+  if (/^https?:\/\/[\w.-]+\.github\.io(?:\/.*)?$/i.test(value)) {
+    return { kind: "pages", url: new URL(value).toString() }
+  }
+
+  const short = value.match(/^([\w.-]+)\/([\w.-]+)$/)
+  if (short) {
+    return { kind: "repo", owner: short[1], repo: short[2] }
+  }
+
+  const parsed = new URL(toAbsoluteUrl(value))
+  if (parsed.hostname.endsWith("github.io")) {
+    return { kind: "pages", url: parsed.toString() }
+  }
+  if (parsed.hostname !== "github.com") {
+    throw new Error("Use a GitHub repo URL, a GitHub Pages URL, or owner/repo.")
+  }
+
+  const parts = parsed.pathname.split("/").filter(Boolean)
+  if (parts.length < 2) {
+    throw new Error("GitHub repo URLs should look like github.com/owner/repo.")
+  }
+
+  const owner = parts[0]
+  const repo = parts[1]
+  const mode = parts[2]
+
+  if (mode === "blob" && parts.length >= 5) {
+    return {
+      kind: "blob",
+      owner,
+      repo,
+      branch: decodeURIComponent(parts[3]),
+      filePath: decodeURIComponent(parts.slice(4).join("/")),
+      repoUrl: `https://github.com/${owner}/${repo}`,
+    }
+  }
+
+  if (mode === "tree" && parts.length >= 4) {
+    return {
+      kind: "tree",
+      owner,
+      repo,
+      branch: decodeURIComponent(parts[3]),
+      basePath: decodeURIComponent(parts.slice(4).join("/")),
+      repoUrl: `https://github.com/${owner}/${repo}`,
+    }
+  }
+
+  return {
+    kind: "repo",
+    owner,
+    repo,
+    repoUrl: `https://github.com/${owner}/${repo}`,
+  }
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json",
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Request failed with ${response.status}.`)
+  }
+
+  return response.json()
+}
+
+async function getDefaultBranch(owner, repo) {
+  const data = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`)
+  return data.default_branch
+}
+
+async function getRepoTree(owner, repo, branch) {
+  const data = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${encodeURIComponent(branch)}?recursive=1`)
+  return Array.isArray(data.tree) ? data.tree : []
+}
+
+function chooseGitHubHtmlEntry(tree, basePath = "") {
+  const prefix = normalizePath(basePath)
+  const treePaths = new Set(
+    tree
+      .filter((entry) => entry.type === "blob" && entry.path.toLowerCase().endsWith(".html"))
+      .map((entry) => normalizePath(entry.path)),
+  )
+
+  for (const candidate of GITHUB_ENTRY_CANDIDATES) {
+    const candidatePath = prefixPath(prefix, candidate)
+    if (treePaths.has(candidatePath)) {
+      return candidatePath
+    }
+  }
+
+  if (prefix) {
+    const prefixedIndex = `${prefix}/index.html`
+    if (treePaths.has(prefixedIndex)) {
+      return prefixedIndex
+    }
+  }
+
+  const htmlFiles = Array.from(treePaths).filter((path) => !path.startsWith("node_modules/"))
+  const prefixMatches = prefix
+    ? htmlFiles.filter((path) => path === prefix || path.startsWith(`${prefix}/`))
+    : htmlFiles
+
+  const firstIndex = prefixMatches.find((path) => path.toLowerCase().endsWith("/index.html"))
+  if (firstIndex) return firstIndex
+
+  return prefixMatches[0] || ""
+}
+
+function ensureHead(doc) {
+  if (!doc.head) {
+    const head = doc.createElement("head")
+    doc.documentElement.insertBefore(head, doc.body || null)
+  }
+  return doc.head
+}
+
+function rewriteRootRelativeNodeAttributes(doc, assetRoot) {
+  const attrs = [
+    ["img", "src"],
+    ["script", "src"],
+    ["source", "src"],
+    ["video", "src"],
+    ["audio", "src"],
+    ["track", "src"],
+    ["iframe", "src"],
+    ["object", "data"],
+    ["embed", "src"],
+    ["link", "href"],
+    ["a", "href"],
+  ]
+
+  for (const [selector, attr] of attrs) {
+    for (const node of Array.from(doc.querySelectorAll(`${selector}[${attr}]`))) {
+      const current = node.getAttribute(attr)
+      if (!current || !current.startsWith("/") || current.startsWith("//")) continue
+      node.setAttribute(attr, `${assetRoot}${current}`)
+    }
+  }
+}
+
+function rewriteRootRelativeCssUrls(doc, assetRoot) {
+  const replacer = (text) => text.replace(/url\(([^)]+)\)/gi, (match, raw) => {
+    const cleaned = raw.trim().replace(/^['"]|['"]$/g, "")
+    if (!cleaned.startsWith("/") || cleaned.startsWith("//")) return match
+    return `url("${assetRoot}${cleaned}")`
+  })
+
+  for (const node of Array.from(doc.querySelectorAll("style"))) {
+    node.textContent = replacer(node.textContent || "")
+  }
+
+  for (const node of Array.from(doc.querySelectorAll("[style]"))) {
+    const value = node.getAttribute("style")
+    if (value) node.setAttribute("style", replacer(value))
+  }
+}
+
+async function buildGitHubHtmlPreview(owner, repo, branch, htmlPath) {
+  const htmlUrl = buildCdnUrl(owner, repo, branch, htmlPath)
+  const response = await fetch(htmlUrl)
+  if (!response.ok) {
+    throw new Error(`Could not load ${htmlPath} from GitHub (${response.status}).`)
+  }
+
+  const html = await response.text()
+  const doc = new DOMParser().parseFromString(html, "text/html")
+  const head = ensureHead(doc)
+  const base = doc.createElement("base")
+  const dir = dirname(htmlPath)
+  base.href = `${buildCdnUrl(owner, repo, branch, dir)}${dir ? "/" : "/"}`
+  head.prepend(base)
+
+  const assetRoot = buildCdnUrl(owner, repo, branch)
+  rewriteRootRelativeNodeAttributes(doc, assetRoot)
+  rewriteRootRelativeCssUrls(doc, assetRoot)
+
+  return {
+    html: `<!doctype html>\n${doc.documentElement.outerHTML}`,
+    sourceUrl: htmlUrl,
+  }
+}
+
+async function tryHelperGitHubPreview(rawInput) {
+  const origin = await detectHelper()
+  if (!origin) return null
+
+  const response = await fetch(`${origin}/api/github-preview`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ input: rawInput }),
+  })
+
+  const payload = await response.json().catch(() => null)
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.message || "The local helper could not build that repository.")
+  }
+
+  return payload
+}
+
+async function loadGitHubPreviewFromInput() {
+  const rawInput = githubInput.value
+  const target = parseGitHubInput(rawInput)
+
+  if (target.kind === "pages") {
+    clearBlobs()
+    applyUrlPreview(target.url, `Previewing ${target.url}`, "ok", target.url)
+    return
+  }
+
+  if (target.kind !== "blob") {
+    try {
+      setStatus("Trying the local GitHub helper for clone/build/serve preview...", "")
+      const helperResult = await tryHelperGitHubPreview(rawInput)
+      if (helperResult?.mode === "url") {
+        clearBlobs()
+        applyUrlPreview(helperResult.previewUrl, helperResult.message, "ok", helperResult.openUrl || helperResult.previewUrl)
+        return
+      }
+    } catch (error) {
+      setStatus(`${error.message} Falling back to browser-only GitHub preview.`, "warn")
+    }
+  }
+
+  setStatus("Looking for a GitHub preview candidate...", "")
+
+  if (target.kind === "blob" && /\.html?$/i.test(target.filePath)) {
+    clearBlobs()
+    const rendered = await buildGitHubHtmlPreview(target.owner, target.repo, target.branch, target.filePath)
+    applyHtmlPreview(rendered.html, `Loaded ${target.filePath} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl)
+    return
+  }
+
+  const branch = target.branch || await getDefaultBranch(target.owner, target.repo)
+  const tree = await getRepoTree(target.owner, target.repo, branch)
+  const entry = chooseGitHubHtmlEntry(tree, target.basePath || "")
+
+  if (entry) {
+    clearBlobs()
+    const rendered = await buildGitHubHtmlPreview(target.owner, target.repo, branch, entry)
+    applyHtmlPreview(rendered.html, `Loaded ${entry} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl)
+    return
+  }
+
+  clearBlobs()
+  const pagesUrl = inferPagesUrl(target.owner, target.repo)
+  applyUrlPreview(
+    pagesUrl,
+    `No static HTML file was found in ${target.owner}/${target.repo}. Falling back to ${pagesUrl}. If it stays blank, GitHub Pages may not be enabled or you may want to run npm run preview:helper for clone/build/serve support.`,
+    "warn",
+    target.repoUrl || pagesUrl,
+  )
+}
+
 async function buildFolderPreview(fileList) {
   const files = Array.from(fileList || [])
   const map = new Map(files.map((file) => [normalizePath(file.webkitRelativePath || file.name), file]))
-  const entry = map.has("index.html") ? "index.html" : map.has("index.htm") ? "index.htm" : Array.from(map.keys()).find((key) => /(?:^|\/)index\.html?$/i.test(key)) || Array.from(map.keys()).find((key) => /\.html?$/i.test(key))
+  const entry = map.has("index.html")
+    ? "index.html"
+    : map.has("index.htm")
+      ? "index.htm"
+      : Array.from(map.keys()).find((key) => /(?:^|\/)index\.html?$/i.test(key)) || Array.from(map.keys()).find((key) => /\.html?$/i.test(key))
+
   if (!entry) throw new Error("Could not find an HTML entry file in that folder.")
 
   const cache = new Map()
@@ -236,7 +566,7 @@ async function buildFolderPreview(fileList) {
     if (styleValue) node.setAttribute("style", rewriteCss(styleValue, entryDir, getAssetUrl))
   }
 
-  const attrs = [["img","src"],["script","src"],["source","src"],["video","src"],["audio","src"],["track","src"],["iframe","src"],["object","data"],["embed","src"],["link","href"]]
+  const attrs = [["img", "src"], ["script", "src"], ["source", "src"], ["video", "src"], ["audio", "src"], ["track", "src"], ["iframe", "src"], ["object", "data"], ["embed", "src"], ["link", "href"]]
   for (const [selector, attr] of attrs) {
     for (const node of Array.from(doc.querySelectorAll(`${selector}[${attr}]`))) {
       if (selector === "link" && String(node.getAttribute("rel") || "").toLowerCase() === "stylesheet") continue
@@ -248,27 +578,31 @@ async function buildFolderPreview(fileList) {
   }
 
   if (doc.querySelector('script[type="module"][src]')) warn = true
-  const url = makeHtmlBlob(`<!doctype html>\n${doc.documentElement.outerHTML}`)
-  return { url, warn, message: warn ? `Loaded ${entry}. Relative ES module imports may still need a dev server URL.` : `Loaded ${entry} from the selected folder.` }
+
+  return {
+    html: `<!doctype html>\n${doc.documentElement.outerHTML}`,
+    warn,
+    message: warn
+      ? `Loaded ${entry}. Relative ES module imports may still need a dev server URL.`
+      : `Loaded ${entry} from the selected folder.`,
+  }
 }
 
 function loadUrlFromInput() {
   try {
     clearBlobs()
     const url = toAbsoluteUrl(urlInput.value)
-    applyPreviewUrl(url, `Loaded ${url}`, "ok", url)
+    applyUrlPreview(url, `Loaded ${url}`, "ok", url)
   } catch (error) {
     setStatus(error.message, "warn")
   }
 }
 
-function loadGithubFromInput() {
+async function loadGitHubFromInput() {
   try {
-    clearBlobs()
-    const url = githubToPages(githubInput.value)
-    applyPreviewUrl(url, `Previewing ${url}. If it stays blank, GitHub Pages may not be enabled yet.`, "ok", url)
+    await loadGitHubPreviewFromInput()
   } catch (error) {
-    setStatus(error.message, "warn")
+    setStatus(error.message || "GitHub preview could not be loaded.", "warn")
   }
 }
 
@@ -278,7 +612,9 @@ function setLayout(layout) {
 }
 
 $("loadUrl").addEventListener("click", loadUrlFromInput)
-$("loadGithub").addEventListener("click", loadGithubFromInput)
+$("loadGithub").addEventListener("click", () => {
+  void loadGitHubFromInput()
+})
 loadDemoButton.addEventListener("click", loadBuiltInDemo)
 
 urlInput.addEventListener("keydown", (event) => {
@@ -286,7 +622,10 @@ urlInput.addEventListener("keydown", (event) => {
 })
 
 githubInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") loadGithubFromInput()
+  if (event.key === "Enter") {
+    event.preventDefault()
+    void loadGitHubFromInput()
+  }
 })
 
 htmlInput.addEventListener("change", async () => {
@@ -294,8 +633,7 @@ htmlInput.addEventListener("change", async () => {
   if (!file) return
   try {
     clearBlobs()
-    const url = makeHtmlBlob(await file.text())
-    applyPreview(url, `Loaded ${file.name}. Inline assets work best in this mode.`, "ok", url)
+    applyHtmlPreview(await file.text(), `Loaded ${file.name}. Inline assets work best in this mode.`, "ok")
   } catch (error) {
     setStatus(`Could not open ${file.name}. ${error.message}`, "warn")
   }
@@ -306,7 +644,7 @@ folderInput.addEventListener("change", async () => {
   try {
     clearBlobs()
     const result = await buildFolderPreview(folderInput.files)
-    applyPreview(result.url, result.message, result.warn ? "warn" : "ok", result.url)
+    applyHtmlPreview(result.html, result.message, result.warn ? "warn" : "ok")
   } catch (error) {
     setStatus(error.message, "warn")
   }
@@ -333,6 +671,8 @@ const presetLayout = params.get("layout")
 if (["both", "ios", "android"].includes(presetLayout)) setLayout(presetLayout)
 else setLayout("both")
 
+void detectHelper()
+
 if (params.get("demo") === "1") {
   loadBuiltInDemo()
 } else if (params.get("url")) {
@@ -340,8 +680,7 @@ if (params.get("demo") === "1") {
   loadUrlFromInput()
 } else if (params.get("github")) {
   githubInput.value = params.get("github")
-  loadGithubFromInput()
+  void loadGitHubFromInput()
 } else {
   showWelcome()
 }
-

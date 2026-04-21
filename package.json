@@ -10,13 +10,15 @@
     "types":  "./dist/index.d.ts",
     "exports":  {
                     ".":  {
+                              "require":  "./dist/index.js",
                               "types":  "./dist/index.d.ts",
-                              "import":  "./dist/index.mjs",
-                              "require":  "./dist/index.js"
+                              "import":  "./dist/index.mjs"
                           }
                 },
     "files":  [
                   "dist",
+                  "examples",
+                  "scripts",
                   "README.md",
                   "LICENSE"
               ],
@@ -25,7 +27,8 @@
                     "dev":  "tsup src/index.ts --format esm,cjs --dts --watch",
                     "typecheck":  "tsc --noEmit",
                     "prepack":  "npm run build \u0026\u0026 npm run typecheck",
-                    "preview:render":  "npm run build \u0026\u0026 node scripts/generate-readme-preview.mjs"
+                    "preview:render":  "npm run build \u0026\u0026 node scripts/generate-readme-preview.mjs",
+                    "preview:helper":  "node scripts/live-preview-helper.mjs"
                 },
     "peerDependencies":  {
                              "react":  "\u003e=18",
