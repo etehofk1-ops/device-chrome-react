@@ -117,7 +117,7 @@ const iosContent = h(
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
-      padding: "98px 24px 32px",
+      padding: "24px 24px 8px",
       background: "linear-gradient(180deg, #fff8ef 0%, #f6e3cf 46%, #f7efe4 100%)",
       boxSizing: "border-box",
     },

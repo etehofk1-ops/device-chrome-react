@@ -5,6 +5,7 @@
   IOSHomeIndicator,
 } from "./ios-device-frame"
 export type {
+  IOSContentInsets,
   IOSDeviceFrameProps,
   IOSStatusBarProps,
 } from "./ios-device-frame"

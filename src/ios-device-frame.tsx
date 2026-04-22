@@ -1,4 +1,14 @@
-﻿import type { CSSProperties, ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
+
+const IOS_TOP_SAFE_AREA = 59
+const IOS_BOTTOM_SAFE_AREA = 34
+
+export interface IOSContentInsets {
+  top?: number
+  right?: number
+  bottom?: number
+  left?: number
+}
 
 export interface IOSDeviceFrameProps {
   children: ReactNode
@@ -11,6 +21,7 @@ export interface IOSDeviceFrameProps {
   showHomeIndicator?: boolean
   style?: CSSProperties
   screenStyle?: CSSProperties
+  contentInsets?: false | IOSContentInsets
 }
 
 export interface IOSStatusBarProps {
@@ -61,12 +72,27 @@ export function IOSHomeIndicator({ dark = false }: { dark?: boolean }) {
   )
 }
 
-export function IOSDeviceFrame({ children, width = 402, height = 874, dark = false, time = "9:41", showStatusBar = true, showDynamicIsland = true, showHomeIndicator = true, style, screenStyle }: IOSDeviceFrameProps) {
+function resolveContentInsets(showStatusBar: boolean, showDynamicIsland: boolean, showHomeIndicator: boolean, contentInsets: false | IOSContentInsets | undefined) {
+  if (contentInsets === false) {
+    return { top: 0, right: 0, bottom: 0, left: 0 }
+  }
+
+  return {
+    top: contentInsets?.top ?? (showStatusBar || showDynamicIsland ? IOS_TOP_SAFE_AREA : 0),
+    right: contentInsets?.right ?? 0,
+    bottom: contentInsets?.bottom ?? (showHomeIndicator ? IOS_BOTTOM_SAFE_AREA : 0),
+    left: contentInsets?.left ?? 0,
+  }
+}
+
+export function IOSDeviceFrame({ children, width = 402, height = 874, dark = false, time = "9:41", showStatusBar = true, showDynamicIsland = true, showHomeIndicator = true, style, screenStyle, contentInsets }: IOSDeviceFrameProps) {
+  const insets = resolveContentInsets(showStatusBar, showDynamicIsland, showHomeIndicator, contentInsets)
+
   return (
     <div style={{ position: "relative", overflow: "hidden", width, height, borderRadius: 48, background: dark ? "#000000" : "#F5EFE4", boxShadow: "0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)", fontFamily: '-apple-system, system-ui, sans-serif', WebkitFontSmoothing: "antialiased", ...style }}>
       {showDynamicIsland ? <IOSDynamicIsland /> : null}
       {showStatusBar ? <IOSStatusBar dark={dark} time={time} /> : null}
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden", ...screenStyle }}>{children}</div>
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: "100%", height: "100%", overflow: "hidden", boxSizing: "border-box", paddingTop: insets.top, paddingRight: insets.right, paddingBottom: insets.bottom, paddingLeft: insets.left, ...screenStyle }}>{children}</div>
       {showHomeIndicator ? <IOSHomeIndicator dark={dark} /> : null}
     </div>
   )

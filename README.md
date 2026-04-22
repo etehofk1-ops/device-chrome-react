@@ -54,7 +54,6 @@ export default function Preview() {
             height: "100%",
             background: "#f5efe4",
             padding: 24,
-            paddingTop: 96,
           }}
         >
           iOS screen content
@@ -76,6 +75,8 @@ export default function Preview() {
   )
 }
 ```
+
+`IOSDeviceFrame` applies iPhone-style top and bottom safe-area insets by default so real pages do not collide with the status chrome. Pass `contentInsets={false}` if you want full edge-to-edge control.
 
 ## Repo preview asset
 
