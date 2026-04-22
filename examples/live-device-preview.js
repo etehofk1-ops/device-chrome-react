@@ -7,6 +7,7 @@ const htmlInput = $("htmlInput")
 const folderInput = $("folderInput")
 const statusNode = $("status")
 const helperStatusNode = $("helperStatus")
+const stage = $("stage")
 const openSourceButton = $("openSource")
 const devices = $("devices")
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
@@ -114,7 +115,15 @@ function trackBlobFromFile(file) {
   return url
 }
 
-function applyUrlPreview(url, message, tone = "ok", openUrl = url) {
+function revealPreviewOnMobile() {
+  if (!stage || !window.matchMedia("(max-width: 960px)").matches) return
+
+  window.requestAnimationFrame(() => {
+    stage.scrollIntoView({ behavior: "smooth", block: "start" })
+  })
+}
+
+function applyUrlPreview(url, message, tone = "ok", openUrl = url, options = {}) {
   iosFrame.removeAttribute("srcdoc")
   androidFrame.removeAttribute("srcdoc")
   iosFrame.src = url
@@ -122,9 +131,10 @@ function applyUrlPreview(url, message, tone = "ok", openUrl = url) {
   state.openUrl = openUrl || ""
   openSourceButton.disabled = !state.openUrl
   setStatus(message, tone)
+  if (options.revealOnMobile) revealPreviewOnMobile()
 }
 
-function applyHtmlPreview(html, message, tone = "ok", openUrl = "") {
+function applyHtmlPreview(html, message, tone = "ok", openUrl = "", options = {}) {
   iosFrame.removeAttribute("src")
   androidFrame.removeAttribute("src")
   iosFrame.srcdoc = html
@@ -132,6 +142,7 @@ function applyHtmlPreview(html, message, tone = "ok", openUrl = "") {
   state.openUrl = openUrl || ""
   openSourceButton.disabled = !state.openUrl
   setStatus(message, tone)
+  if (options.revealOnMobile) revealPreviewOnMobile()
 }
 
 function showWelcome() {
@@ -141,7 +152,7 @@ function showWelcome() {
 
 function loadBuiltInDemo() {
   clearBlobs()
-  applyHtmlPreview(demo, "Loaded the built-in demo page inside both device shells.", "ok")
+  applyHtmlPreview(demo, "Loaded the built-in demo page inside both device shells.", "ok", "", { revealOnMobile: true })
 }
 
 async function fetchWithTimeout(resource, options = {}, timeoutMs = 1500) {
@@ -476,7 +487,7 @@ async function loadGitHubPreviewFromInput() {
 
   if (target.kind === "pages") {
     clearBlobs()
-    applyUrlPreview(target.url, `Previewing ${target.url}`, "ok", target.url)
+    applyUrlPreview(target.url, `Previewing ${target.url}`, "ok", target.url, { revealOnMobile: true })
     return
   }
 
@@ -486,7 +497,7 @@ async function loadGitHubPreviewFromInput() {
       const helperResult = await tryHelperGitHubPreview(rawInput)
       if (helperResult?.mode === "url") {
         clearBlobs()
-        applyUrlPreview(helperResult.previewUrl, helperResult.message, "ok", helperResult.openUrl || helperResult.previewUrl)
+        applyUrlPreview(helperResult.previewUrl, helperResult.message, "ok", helperResult.openUrl || helperResult.previewUrl, { revealOnMobile: true })
         return
       }
     } catch (error) {
@@ -499,7 +510,7 @@ async function loadGitHubPreviewFromInput() {
   if (target.kind === "blob" && /\.html?$/i.test(target.filePath)) {
     clearBlobs()
     const rendered = await buildGitHubHtmlPreview(target.owner, target.repo, target.branch, target.filePath)
-    applyHtmlPreview(rendered.html, `Loaded ${target.filePath} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl)
+    applyHtmlPreview(rendered.html, `Loaded ${target.filePath} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl, { revealOnMobile: true })
     return
   }
 
@@ -510,7 +521,7 @@ async function loadGitHubPreviewFromInput() {
   if (entry) {
     clearBlobs()
     const rendered = await buildGitHubHtmlPreview(target.owner, target.repo, branch, entry)
-    applyHtmlPreview(rendered.html, `Loaded ${entry} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl)
+    applyHtmlPreview(rendered.html, `Loaded ${entry} from ${target.owner}/${target.repo}.`, "ok", target.repoUrl || rendered.sourceUrl, { revealOnMobile: true })
     return
   }
 
@@ -521,6 +532,7 @@ async function loadGitHubPreviewFromInput() {
     `No static HTML file was found in ${target.owner}/${target.repo}. Falling back to ${pagesUrl}. If it stays blank, GitHub Pages may not be enabled or you may want to run npm run preview:helper for clone/build/serve support.`,
     "warn",
     target.repoUrl || pagesUrl,
+    { revealOnMobile: true },
   )
 }
 
@@ -592,7 +604,7 @@ function loadUrlFromInput() {
   try {
     clearBlobs()
     const url = toAbsoluteUrl(urlInput.value)
-    applyUrlPreview(url, `Loaded ${url}`, "ok", url)
+    applyUrlPreview(url, `Loaded ${url}`, "ok", url, { revealOnMobile: true })
   } catch (error) {
     setStatus(error.message, "warn")
   }
@@ -633,7 +645,7 @@ htmlInput.addEventListener("change", async () => {
   if (!file) return
   try {
     clearBlobs()
-    applyHtmlPreview(await file.text(), `Loaded ${file.name}. Inline assets work best in this mode.`, "ok")
+    applyHtmlPreview(await file.text(), `Loaded ${file.name}. Inline assets work best in this mode.`, "ok", "", { revealOnMobile: true })
   } catch (error) {
     setStatus(`Could not open ${file.name}. ${error.message}`, "warn")
   }
@@ -644,7 +656,7 @@ folderInput.addEventListener("change", async () => {
   try {
     clearBlobs()
     const result = await buildFolderPreview(folderInput.files)
-    applyHtmlPreview(result.html, result.message, result.warn ? "warn" : "ok")
+    applyHtmlPreview(result.html, result.message, result.warn ? "warn" : "ok", "", { revealOnMobile: true })
   } catch (error) {
     setStatus(error.message, "warn")
   }

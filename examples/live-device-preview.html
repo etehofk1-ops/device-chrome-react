@@ -1,19 +1,615 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>device-chrome-react live preview</title>
     <style>
-      :root{--bg1:#f7efe4;--bg2:#e9f6ef;--bg3:#edf3ff;--panel:rgba(255,255,255,.76);--line:rgba(16,32,51,.08);--text:#102033;--muted:rgba(16,32,51,.66);--green:#0e6b52;--amber:#9b6321}
-      *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(255,255,255,.82),rgba(255,255,255,0) 35%),linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%)}body{min-width:1260px}
-      .app{min-height:100vh;display:grid;grid-template-columns:390px 1fr;gap:24px;padding:24px}.panel,.stage{background:var(--panel);border:1px solid var(--line);box-shadow:0 24px 64px rgba(24,45,71,.12);backdrop-filter:blur(18px)}.panel{border-radius:28px;padding:24px;display:flex;flex-direction:column;gap:18px}.tag{width:fit-content;margin:0;padding:9px 12px;border-radius:999px;background:rgba(16,32,51,.08);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}h1{margin:0;font-size:36px;line-height:.98;letter-spacing:-.05em}.lead,.hint,.status small{margin:0;color:var(--muted);line-height:1.5}
-      .card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:22px;background:rgba(255,255,255,.56);border:1px solid rgba(16,32,51,.06)}.card h2{margin:0;font-size:18px;letter-spacing:-.03em}label{font-size:14px;font-weight:700}input[type=text],input[type=url],input[type=file]{width:100%;border:1px solid rgba(16,32,51,.12);border-radius:16px;padding:13px 14px;background:rgba(255,255,255,.9);font:inherit;color:var(--text)}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}button{appearance:none;border:0;border-radius:16px;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer;transition:transform .14s ease,opacity .14s ease,background .14s ease}button:hover{transform:translateY(-1px)}button.primary{background:linear-gradient(135deg,var(--green) 0%,#0b5a45 100%);color:#fff}button.secondary{background:rgba(16,32,51,.08);color:var(--text)}button.ghost{background:rgba(255,255,255,.7);border:1px solid rgba(16,32,51,.08);color:var(--text)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}.seg button.active{background:rgba(14,107,82,.12);color:#0b5a45}
-      .status{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.74);border:1px solid rgba(16,32,51,.08);line-height:1.45}.status.ok{color:#0b5a45}.status.warn{color:var(--amber)}.stage{border-radius:32px;padding:24px;display:flex;flex-direction:column;gap:18px}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap}.head h2{margin:0;font-size:28px;letter-spacing:-.04em}.pills{display:flex;gap:10px;flex-wrap:wrap}.pill{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
-      .devices{display:flex;justify-content:center;gap:32px;align-items:flex-start;flex-wrap:wrap}.shell{display:flex;flex-direction:column;gap:10px}.labelbar{display:flex;justify-content:space-between;gap:12px;padding:0 8px;font-size:13px;color:var(--muted)}.labelbar strong{color:var(--text)}.caption{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.76);border:1px solid var(--line)}iframe{width:100%;height:100%;border:0;background:#fff}
-      .ios{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:#f5efe4;box-shadow:0 40px 80px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.12)}.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);z-index:2;width:126px;height:37px;border-radius:24px;background:#000}.iosstatus{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;padding:21px 24px 19px;color:#000;font-size:17px;font-weight:600}.iosstatus .icons{display:flex;align-items:center;gap:8px}.dot,.bar{background:#000;border-radius:999px}.dot{width:4px;height:4px}.bar{width:18px;height:8px}.home{position:absolute;left:0;right:0;bottom:8px;z-index:2;display:flex;justify-content:center}.home::before{content:"";width:139px;height:5px;border-radius:999px;background:rgba(0,0,0,.25)}.screen{position:absolute;inset:0;overflow:hidden}
-      .android{width:412px;height:892px;display:flex;flex-direction:column;border-radius:18px;overflow:hidden;border:8px solid rgba(116,119,117,.5);background:#f4fbf8;box-shadow:0 30px 80px rgba(0,0,0,.25)}.astatus{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:relative;font-size:14px;color:#171d1b}.hole{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:999px;background:#2e2e2e}.atop{padding:4px 4px 0;background:#f4fbf8}.abar{height:56px;display:flex;align-items:center;gap:4px}.icon{width:48px;height:48px;display:grid;place-items:center}.icon::before{content:"";width:22px;height:22px;border-radius:999px;background:rgba(73,69,79,.3)}.title{flex:1;font-size:22px;color:#171d1b}.android .screen{position:relative;flex:1;min-height:0;overflow:hidden}.gesture{height:24px;display:flex;align-items:center;justify-content:center}.gesture::before{content:"";width:108px;height:4px;border-radius:2px;background:rgba(23,29,27,.4)}
-      .layout-ios .androidwrap,.layout-android .ioswrap{display:none}
+      :root {
+        --bg1: #f7efe4;
+        --bg2: #e9f6ef;
+        --bg3: #edf3ff;
+        --panel: rgba(255, 255, 255, 0.76);
+        --line: rgba(16, 32, 51, 0.08);
+        --text: #102033;
+        --muted: rgba(16, 32, 51, 0.66);
+        --green: #0e6b52;
+        --amber: #9b6321;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0) 35%),
+          linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 55%, var(--bg3) 100%);
+      }
+
+      body {
+        min-width: 0;
+      }
+
+      .app {
+        min-height: 100vh;
+        width: min(100%, 1560px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+        gap: 24px;
+        padding: 24px;
+      }
+
+      .panel,
+      .stage {
+        min-width: 0;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        box-shadow: 0 24px 64px rgba(24, 45, 71, 0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      .panel {
+        border-radius: 28px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .tag {
+        width: fit-content;
+        margin: 0;
+        padding: 9px 12px;
+        border-radius: 999px;
+        background: rgba(16, 32, 51, 0.08);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 36px;
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .lead,
+      .hint,
+      .status small {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px solid rgba(16, 32, 51, 0.06);
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+
+      label {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      input[type="text"],
+      input[type="url"],
+      input[type="file"] {
+        width: 100%;
+        border: 1px solid rgba(16, 32, 51, 0.12);
+        border-radius: 16px;
+        padding: 13px 14px;
+        background: rgba(255, 255, 255, 0.9);
+        font: inherit;
+        color: var(--text);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .row > * {
+        flex: 1 1 0;
+        min-width: 140px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 16px;
+        padding: 12px 14px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.14s ease, opacity 0.14s ease, background 0.14s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, var(--green) 0%, #0b5a45 100%);
+        color: #fff;
+      }
+
+      button.secondary {
+        background: rgba(16, 32, 51, 0.08);
+        color: var(--text);
+      }
+
+      button.ghost {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(16, 32, 51, 0.08);
+        color: var(--text);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .seg button.active {
+        background: rgba(14, 107, 82, 0.12);
+        color: #0b5a45;
+      }
+
+      .status {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid rgba(16, 32, 51, 0.08);
+        line-height: 1.45;
+      }
+
+      .status.ok {
+        color: #0b5a45;
+      }
+
+      .status.warn {
+        color: var(--amber);
+      }
+
+      .stage {
+        border-radius: 32px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        overflow: hidden;
+      }
+
+      .head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+
+      .head h2 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.04em;
+      }
+
+      .pills {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .pill {
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--line);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .devices {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .shell {
+        --shell-scale: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: calc(var(--device-width) * var(--shell-scale));
+        min-width: 0;
+      }
+
+      .ioswrap {
+        --device-width: 390px;
+        --device-height: 844px;
+      }
+
+      .androidwrap {
+        --device-width: 412px;
+        --device-height: 892px;
+      }
+
+      .labelbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 8px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .labelbar strong {
+        color: var(--text);
+      }
+
+      .caption {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid var(--line);
+      }
+
+      .deviceframe {
+        width: var(--device-width);
+        height: var(--device-height);
+        transform: scale(var(--shell-scale));
+        transform-origin: top center;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff;
+      }
+
+      .ios {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 48px;
+        overflow: hidden;
+        background: #f5efe4;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.12);
+      }
+
+      .island {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        width: 126px;
+        height: 37px;
+        border-radius: 24px;
+        background: #000;
+      }
+
+      .iosstatus {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: space-between;
+        padding: 21px 24px 19px;
+        color: #000;
+        font-size: 17px;
+        font-weight: 600;
+      }
+
+      .iosstatus .icons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot,
+      .bar {
+        background: #000;
+        border-radius: 999px;
+      }
+
+      .dot {
+        width: 4px;
+        height: 4px;
+      }
+
+      .bar {
+        width: 18px;
+        height: 8px;
+      }
+
+      .home {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 8px;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+      }
+
+      .home::before {
+        content: "";
+        width: 139px;
+        height: 5px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.25);
+      }
+
+      .screen {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .android {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 8px solid rgba(116, 119, 117, 0.5);
+        background: #f4fbf8;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+      }
+
+      .astatus {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        position: relative;
+        font-size: 14px;
+        color: #171d1b;
+      }
+
+      .hole {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: #2e2e2e;
+      }
+
+      .atop {
+        padding: 4px 4px 0;
+        background: #f4fbf8;
+      }
+
+      .abar {
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .icon {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+      }
+
+      .icon::before {
+        content: "";
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: rgba(73, 69, 79, 0.3);
+      }
+
+      .title {
+        flex: 1;
+        font-size: 22px;
+        color: #171d1b;
+      }
+
+      .android .screen {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .gesture {
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gesture::before {
+        content: "";
+        width: 108px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(23, 29, 27, 0.4);
+      }
+
+      .layout-ios .androidwrap,
+      .layout-android .ioswrap {
+        display: none;
+      }
+
+      @media (max-width: 1400px) {
+        .app {
+          grid-template-columns: 360px minmax(0, 1fr);
+        }
+
+        .devices {
+          gap: 24px;
+        }
+
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.88;
+        }
+      }
+
+      @media (max-width: 1180px) {
+        .app {
+          grid-template-columns: 340px minmax(0, 1fr);
+          gap: 20px;
+          padding: 20px;
+        }
+
+        .panel,
+        .stage {
+          padding: 20px;
+        }
+
+        .head h2 {
+          font-size: 26px;
+        }
+
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.76;
+        }
+      }
+
+      @media (max-width: 960px) {
+        .app {
+          grid-template-columns: 1fr;
+          gap: 16px;
+          padding: 16px;
+        }
+
+        .panel,
+        .stage {
+          border-radius: 26px;
+          padding: 18px;
+        }
+
+        .head {
+          align-items: flex-start;
+        }
+
+        .pills {
+          width: 100%;
+        }
+
+        .devices {
+          gap: 24px;
+        }
+
+        .shell {
+          margin: 0 auto;
+        }
+
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.72;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .panel,
+        .stage {
+          border-radius: 22px;
+          padding: 16px;
+        }
+
+        h1 {
+          font-size: 30px;
+        }
+
+        .head h2 {
+          font-size: 22px;
+        }
+
+        .card {
+          padding: 14px;
+          gap: 8px;
+        }
+
+        .row > * {
+          min-width: 100%;
+        }
+
+        .labelbar {
+          padding: 0 4px;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .caption {
+          font-size: 12px;
+        }
+
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.62;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .app {
+          padding: 12px;
+        }
+
+        h1 {
+          font-size: 26px;
+        }
+
+        .head h2 {
+          font-size: 20px;
+        }
+
+        .pill {
+          padding: 8px 12px;
+          font-size: 12px;
+        }
+
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.54;
+        }
+      }
+
+      @media (max-width: 390px) {
+        .ioswrap,
+        .androidwrap {
+          --shell-scale: 0.5;
+        }
+      }
     </style>
   </head>
   <body>
@@ -27,7 +623,10 @@
           <h2>URL or localhost</h2>
           <label for="urlInput">Public site, preview deploy, or local dev server</label>
           <input id="urlInput" type="url" placeholder="https://yourapp.com or http://localhost:3000" />
-          <div class="row"><button id="loadUrl" class="primary">Load URL</button><button id="loadDemo" class="ghost">Load demo</button></div>
+          <div class="row">
+            <button id="loadUrl" class="primary">Load URL</button>
+            <button id="loadDemo" class="ghost">Load demo</button>
+          </div>
           <p class="hint">Use `Load demo` to see the framing flow instantly before pasting your own address.</p>
         </section>
 
@@ -35,7 +634,9 @@
           <h2>GitHub input</h2>
           <label for="githubInput">Repo URL, blob URL, GitHub Pages URL, or owner/repo</label>
           <input id="githubInput" type="text" placeholder="https://github.com/owner/repo" />
-          <div class="row"><button id="loadGithub" class="secondary">Load GitHub preview</button></div>
+          <div class="row">
+            <button id="loadGithub" class="secondary">Load GitHub preview</button>
+          </div>
           <p id="helperStatus" class="hint">Checking whether the local GitHub helper is available...</p>
           <p class="hint">If `npm run preview:helper` is running, repo URLs can be cloned, installed, built, and served locally before falling back to browser-only GitHub Pages or static HTML detection.</p>
         </section>
@@ -71,7 +672,7 @@
         <p class="hint">Some services still block iframe embeds with `X-Frame-Options` or `frame-ancestors`. For the broadest GitHub support, run `npm run preview:helper` in this repo and keep the page open while it builds previews.</p>
       </aside>
 
-      <main class="stage">
+      <main id="stage" class="stage">
         <div class="head">
           <div>
             <h2>Device-framed preview</h2>
@@ -86,21 +687,25 @@
         <div id="devices" class="devices layout-both">
           <section class="shell ioswrap">
             <div class="labelbar"><strong>iOS shell</strong><span class="caption">Dynamic Island</span></div>
-            <div class="ios">
-              <div class="island"></div>
-              <div class="iosstatus"><span>9:41</span><span class="icons"><span class="dot"></span><span class="dot"></span><span class="bar"></span></span></div>
-              <div class="screen"><iframe id="iosFrame" title="iOS device preview" referrerpolicy="no-referrer"></iframe></div>
-              <div class="home"></div>
+            <div class="deviceframe">
+              <div class="ios">
+                <div class="island"></div>
+                <div class="iosstatus"><span>9:41</span><span class="icons"><span class="dot"></span><span class="dot"></span><span class="bar"></span></span></div>
+                <div class="screen"><iframe id="iosFrame" title="iOS device preview" referrerpolicy="no-referrer"></iframe></div>
+                <div class="home"></div>
+              </div>
             </div>
           </section>
 
           <section class="shell androidwrap">
             <div class="labelbar"><strong>Android shell</strong><span class="caption">Material top bar</span></div>
-            <div class="android">
-              <div class="astatus"><span>9:30</span><span class="hole"></span><span>LTE 100%</span></div>
-              <div class="atop"><div class="abar"><div class="icon"></div><div class="title">Preview</div><div class="icon"></div></div></div>
-              <div class="screen"><iframe id="androidFrame" title="Android device preview" referrerpolicy="no-referrer"></iframe></div>
-              <div class="gesture"></div>
+            <div class="deviceframe">
+              <div class="android">
+                <div class="astatus"><span>9:30</span><span class="hole"></span><span>LTE 100%</span></div>
+                <div class="atop"><div class="abar"><div class="icon"></div><div class="title">Preview</div><div class="icon"></div></div></div>
+                <div class="screen"><iframe id="androidFrame" title="Android device preview" referrerpolicy="no-referrer"></iframe></div>
+                <div class="gesture"></div>
+              </div>
             </div>
           </section>
         </div>
