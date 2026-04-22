@@ -1,6 +1,8 @@
 ﻿const $ = (id) => document.getElementById(id)
 const iosFrame = $("iosFrame")
 const androidFrame = $("androidFrame")
+const iosNotice = $("iosNotice")
+const androidNotice = $("androidNotice")
 const urlInput = $("urlInput")
 const githubInput = $("githubInput")
 const htmlInput = $("htmlInput")
@@ -22,6 +24,7 @@ const state = {
   activeBlobUrls: new Set(),
   openUrl: "",
   helperOrigin: "",
+  previewRequestId: 0,
 }
 
 const GITHUB_ENTRY_CANDIDATES = [
@@ -102,6 +105,20 @@ function setHelperStatus(message) {
   if (helperStatusNode) helperStatusNode.textContent = message
 }
 
+function setFrameNotice(node, title, copy) {
+  if (!node) return
+  const titleNode = node.querySelector(".frame-notice-title")
+  const copyNode = node.querySelector(".frame-notice-copy")
+  if (titleNode) titleNode.textContent = title
+  if (copyNode) copyNode.textContent = copy
+  node.hidden = false
+}
+
+function hideFrameNotices() {
+  if (iosNotice) iosNotice.hidden = true
+  if (androidNotice) androidNotice.hidden = true
+}
+
 function clearBlobs() {
   for (const url of state.activeBlobUrls) {
     URL.revokeObjectURL(url)
@@ -113,6 +130,43 @@ function trackBlobFromFile(file) {
   const url = URL.createObjectURL(file)
   state.activeBlobUrls.add(url)
   return url
+}
+
+function inspectIframeState(frame) {
+  try {
+    const locationValue = frame.contentWindow?.location?.href || ""
+    if (!locationValue || locationValue === "about:blank") return "blank"
+    if (locationValue.startsWith("chrome-error://") || locationValue.startsWith("edge-error://")) return "error"
+    const body = frame.contentDocument?.body
+    if (body && !body.childElementCount && !(body.textContent || "").trim()) return "blank"
+    return "loaded"
+  } catch {
+    return "cross-origin-loaded"
+  }
+}
+
+function monitorIframeEmbedding(url) {
+  const requestId = ++state.previewRequestId
+  const normalized = String(url || "")
+  const isRemotePreview = /^https?:/i.test(normalized)
+  hideFrameNotices()
+
+  if (!isRemotePreview) return
+
+  window.setTimeout(() => {
+    if (state.previewRequestId !== requestId) return
+
+    const iosState = inspectIframeState(iosFrame)
+    const androidState = inspectIframeState(androidFrame)
+    const looksBlocked = [iosState, androidState].every((value) => value === "blank" || value === "error")
+
+    if (!looksBlocked) return
+
+    const message = "This page refused to load in an iframe. It may send X-Frame-Options: DENY or frame-ancestors 'none'."
+    setFrameNotice(iosNotice, "Preview unavailable", message)
+    setFrameNotice(androidNotice, "Preview unavailable", message)
+    setStatus(`${message} Try GitHub helper, local HTML, or a preview deployment instead.`, "warn")
+  }, 2400)
 }
 
 function revealPreviewOnMobile() {
@@ -131,10 +185,13 @@ function applyUrlPreview(url, message, tone = "ok", openUrl = url, options = {})
   state.openUrl = openUrl || ""
   openSourceButton.disabled = !state.openUrl
   setStatus(message, tone)
+  monitorIframeEmbedding(url)
   if (options.revealOnMobile) revealPreviewOnMobile()
 }
 
 function applyHtmlPreview(html, message, tone = "ok", openUrl = "", options = {}) {
+  state.previewRequestId += 1
+  hideFrameNotices()
   iosFrame.removeAttribute("src")
   androidFrame.removeAttribute("src")
   iosFrame.srcdoc = html
@@ -667,6 +724,8 @@ openSourceButton.addEventListener("click", () => {
 })
 
 $("reset").addEventListener("click", () => {
+  state.previewRequestId += 1
+  hideFrameNotices()
   urlInput.value = ""
   githubInput.value = ""
   htmlInput.value = ""
