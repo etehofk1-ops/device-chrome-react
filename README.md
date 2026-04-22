@@ -91,7 +91,7 @@ That command refreshes [examples/readme-preview.html](./examples/readme-preview.
 
 ## Live Preview Tool
 
-For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser. Use `Load demo` for an instant built-in sample before pasting your own URL.
+For quick no-build checks, open [examples/live-device-preview.html](./examples/live-device-preview.html) directly in a browser. The browser tool keeps source inputs inside one compact tabbed card, so you can switch between URL, GitHub, HTML, and folder previews without scrolling through a long sidebar. Use `Load demo` for an instant built-in sample before pasting your own URL.
 
 For broader GitHub repo support, run the optional local helper in a separate terminal:
 
@@ -110,7 +110,7 @@ It supports:
 - GitHub `blob/.../*.html` file URLs
 - a single local HTML file
 - a best-effort static folder preview based on `index.html`
-- shareable presets with query params like `?url=https://your-preview`, `?github=owner/repo`, or `?demo=1`
+- shareable presets with query params like `?url=https://your-preview`, `?github=owner/repo`, `?source=github`, or `?demo=1`
 - portrait and landscape toggle controls with auto-scaled device shells on smaller screens
 
 GitHub preview order:

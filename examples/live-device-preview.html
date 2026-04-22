@@ -57,10 +57,10 @@
 
       .panel {
         border-radius: 28px;
-        padding: 24px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 14px;
       }
 
       .tag {
@@ -77,7 +77,7 @@
 
       h1 {
         margin: 0;
-        font-size: 36px;
+        font-size: 34px;
         line-height: 0.98;
         letter-spacing: -0.05em;
       }
@@ -93,8 +93,8 @@
       .card {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 16px;
+        gap: 12px;
+        padding: 14px;
         border-radius: 22px;
         background: rgba(255, 255, 255, 0.56);
         border: 1px solid rgba(16, 32, 51, 0.06);
@@ -104,6 +104,16 @@
         margin: 0;
         font-size: 18px;
         letter-spacing: -0.03em;
+      }
+
+      .subcard {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid rgba(16, 32, 51, 0.06);
       }
 
       label {
@@ -190,6 +200,65 @@
 
       .status.warn {
         color: var(--amber);
+      }
+
+      .source-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .source-panel[hidden] {
+        display: none;
+      }
+
+      .compact-note {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .mini-label {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .mini-seg {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .mini-seg > * {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      details.notes {
+        padding: 0;
+      }
+
+      details.notes summary {
+        cursor: pointer;
+        list-style: none;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      details.notes summary::-webkit-details-marker {
+        display: none;
       }
 
       .stage {
@@ -544,7 +613,7 @@
 
         .panel,
         .stage {
-          padding: 20px;
+          padding: 18px;
         }
 
         .head h2 {
@@ -567,7 +636,7 @@
         .panel,
         .stage {
           border-radius: 26px;
-          padding: 18px;
+          padding: 16px;
         }
 
         .head {
@@ -623,14 +692,6 @@
           font-size: 20px;
         }
 
-        .card {
-          padding: 12px;
-        }
-
-        .row > * {
-          min-width: 120px;
-        }
-
         .devices {
           gap: 16px;
           align-content: flex-start;
@@ -647,20 +708,20 @@
         .panel,
         .stage {
           border-radius: 22px;
-          padding: 16px;
+          padding: 14px;
         }
 
         h1 {
-          font-size: 30px;
+          font-size: 28px;
         }
 
         .head h2 {
           font-size: 22px;
         }
 
-        .card {
-          padding: 14px;
-          gap: 8px;
+        .source-tabs,
+        .mini-grid {
+          grid-template-columns: 1fr;
         }
 
         .row > * {
@@ -701,6 +762,10 @@
           font-size: 12px;
         }
 
+        .source-tabs {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .ioswrap,
         .androidwrap {
           --shell-scale: 0.54;
@@ -720,58 +785,68 @@
       <aside class="panel">
         <p class="tag">device-chrome-react</p>
         <h1>Live Device Preview</h1>
-        <p class="lead">Load a real page into iOS and Android chrome with a single browser-openable tool.</p>
+        <p class="lead">Load a source fast, switch shells, and stay near the preview without a long scroll.</p>
 
         <section class="card">
-          <h2>URL or localhost</h2>
-          <label for="urlInput">Public site, preview deploy, or local dev server</label>
-          <input id="urlInput" type="url" placeholder="https://yourapp.com or http://localhost:3000" />
-          <div class="row">
-            <button id="loadUrl" class="primary">Load URL</button>
-            <button id="loadDemo" class="ghost">Load demo</button>
+          <h2>Source</h2>
+          <div class="source-tabs seg">
+            <button type="button" class="ghost active" data-source-mode="url">URL</button>
+            <button type="button" class="ghost" data-source-mode="github">GitHub</button>
+            <button type="button" class="ghost" data-source-mode="html">HTML</button>
+            <button type="button" class="ghost" data-source-mode="folder">Folder</button>
           </div>
-          <p class="hint">Use `Load demo` to see the framing flow instantly before pasting your own address.</p>
-        </section>
 
-        <section class="card">
-          <h2>GitHub input</h2>
-          <label for="githubInput">Repo URL, blob URL, GitHub Pages URL, or owner/repo</label>
-          <input id="githubInput" type="text" placeholder="https://github.com/owner/repo" />
-          <div class="row">
-            <button id="loadGithub" class="secondary">Load GitHub preview</button>
+          <div id="urlPanel" class="source-panel subcard">
+            <label for="urlInput">Public site, preview deploy, or local dev server</label>
+            <input id="urlInput" type="url" placeholder="https://yourapp.com or http://localhost:3000" />
+            <div class="row">
+              <button id="loadUrl" class="primary">Load URL</button>
+              <button id="loadDemo" class="ghost">Load demo</button>
+            </div>
+            <p class="compact-note">Fastest path for live sites, preview deploys, and localhost.</p>
           </div>
-          <p id="helperStatus" class="hint">Checking whether the local GitHub helper is available...</p>
-          <p class="hint">If `npm run preview:helper` is running, repo URLs can be cloned, installed, built, and served locally before falling back to browser-only GitHub Pages or static HTML detection.</p>
-        </section>
 
-        <section class="card">
-          <h2>Local HTML</h2>
-          <label for="htmlInput">Single .html file</label>
-          <input id="htmlInput" type="file" accept=".html,.htm" />
-          <p class="hint">Great for quick mockups with inline CSS or one-file prototypes.</p>
-        </section>
+          <div id="githubPanel" class="source-panel subcard" hidden>
+            <label for="githubInput">Repo URL, blob URL, GitHub Pages URL, or owner/repo</label>
+            <input id="githubInput" type="text" placeholder="https://github.com/owner/repo" />
+            <div class="row">
+              <button id="loadGithub" class="secondary">Load GitHub preview</button>
+            </div>
+            <p id="helperStatus" class="compact-note">Checking whether the local GitHub helper is available...</p>
+            <p class="compact-note">Best when `npm run preview:helper` is running for clone, build, and serve support.</p>
+          </div>
 
-        <section class="card">
-          <h2>Static folder</h2>
-          <label for="folderInput">Folder containing index.html</label>
-          <input id="folderInput" type="file" webkitdirectory multiple />
-          <p class="hint">Best-effort support for static HTML/CSS/image bundles. JS-heavy apps usually work better via a running dev server URL.</p>
-        </section>
+          <div id="htmlPanel" class="source-panel subcard" hidden>
+            <label for="htmlInput">Single .html file</label>
+            <input id="htmlInput" type="file" accept=".html,.htm" />
+            <p class="compact-note">Best for one-file prototypes and inline mockups.</p>
+          </div>
 
-        <section class="card">
-          <h2>Layout</h2>
-          <div class="row seg">
-            <button type="button" class="ghost active" data-layout="both">Both</button>
-            <button type="button" class="ghost" data-layout="ios">iOS</button>
-            <button type="button" class="ghost" data-layout="android">Android</button>
+          <div id="folderPanel" class="source-panel subcard" hidden>
+            <label for="folderInput">Folder containing index.html</label>
+            <input id="folderInput" type="file" webkitdirectory multiple />
+            <p class="compact-note">Best-effort static bundle support. JS-heavy apps still work better through a dev server URL.</p>
           </div>
         </section>
 
         <section class="card">
-          <h2>Orientation</h2>
-          <div class="row seg">
-            <button type="button" class="ghost active" data-orientation="portrait">Portrait</button>
-            <button type="button" class="ghost" data-orientation="landscape">Landscape</button>
+          <h2>View</h2>
+          <div class="mini-grid">
+            <div class="subcard">
+              <p class="mini-label">Shells</p>
+              <div class="mini-seg seg">
+                <button type="button" class="ghost active" data-layout="both">Both</button>
+                <button type="button" class="ghost" data-layout="ios">iOS</button>
+                <button type="button" class="ghost" data-layout="android">Android</button>
+              </div>
+            </div>
+            <div class="subcard">
+              <p class="mini-label">Orientation</p>
+              <div class="mini-seg seg">
+                <button type="button" class="ghost active" data-orientation="portrait">Portrait</button>
+                <button type="button" class="ghost" data-orientation="landscape">Landscape</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -780,7 +855,10 @@
           <button id="openSource" class="secondary" disabled>Open current source</button>
           <button id="reset" class="ghost">Reset</button>
         </div>
-        <p class="hint">Some services still block iframe embeds with `X-Frame-Options` or `frame-ancestors`. For the broadest GitHub support, run `npm run preview:helper` in this repo and keep the page open while it builds previews.</p>
+        <details class="card notes">
+          <summary>Notes</summary>
+          <p class="hint">Some services still block iframe embeds with `X-Frame-Options` or `frame-ancestors`. For the broadest GitHub support, run `npm run preview:helper` in this repo and keep the page open while it builds previews.</p>
+        </details>
       </aside>
 
       <main id="stage" class="stage">

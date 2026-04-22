@@ -13,9 +13,16 @@ const stage = $("stage")
 const openSourceButton = $("openSource")
 const devices = $("devices")
 const deviceShells = Array.from(document.querySelectorAll(".shell"))
+const sourceModeButtons = Array.from(document.querySelectorAll("[data-source-mode]"))
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
 const orientationButtons = Array.from(document.querySelectorAll("[data-orientation]"))
 const loadDemoButton = $("loadDemo")
+const sourcePanels = {
+  url: $("urlPanel"),
+  github: $("githubPanel"),
+  html: $("htmlPanel"),
+  folder: $("folderPanel"),
+}
 
 const HELPER_ORIGINS = [
   "http://127.0.0.1:4312",
@@ -27,6 +34,7 @@ const state = {
   openUrl: "",
   helperOrigin: "",
   previewRequestId: 0,
+  sourceMode: "url",
   layout: "both",
   orientation: "portrait",
 }
@@ -111,6 +119,21 @@ function syncDevicesClass() {
 
 function setHelperStatus(message) {
   if (helperStatusNode) helperStatusNode.textContent = message
+}
+
+function setSourceMode(mode) {
+  if (!sourcePanels[mode]) return
+
+  state.sourceMode = mode
+
+  sourceModeButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.sourceMode === mode)
+  })
+
+  Object.entries(sourcePanels).forEach(([key, panel]) => {
+    if (!panel) return
+    panel.hidden = key !== mode
+  })
 }
 
 function setFrameNotice(node, title, copy) {
@@ -711,6 +734,7 @@ async function buildFolderPreview(fileList) {
 
 function loadUrlFromInput() {
   try {
+    setSourceMode("url")
     clearBlobs()
     const url = toAbsoluteUrl(urlInput.value)
     applyUrlPreview(url, `Loaded ${url}`, "ok", url, { revealOnMobile: true })
@@ -721,6 +745,7 @@ function loadUrlFromInput() {
 
 async function loadGitHubFromInput() {
   try {
+    setSourceMode("github")
     await loadGitHubPreviewFromInput()
   } catch (error) {
     setStatus(error.message || "GitHub preview could not be loaded.", "warn")
@@ -747,6 +772,10 @@ $("loadGithub").addEventListener("click", () => {
 })
 loadDemoButton.addEventListener("click", loadBuiltInDemo)
 
+sourceModeButtons.forEach((button) => {
+  button.addEventListener("click", () => setSourceMode(button.dataset.sourceMode))
+})
+
 urlInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") loadUrlFromInput()
 })
@@ -762,6 +791,7 @@ htmlInput.addEventListener("change", async () => {
   const file = htmlInput.files && htmlInput.files[0]
   if (!file) return
   try {
+    setSourceMode("html")
     clearBlobs()
     applyHtmlPreview(await file.text(), `Loaded ${file.name}. Inline assets work best in this mode.`, "ok", "", { revealOnMobile: true })
   } catch (error) {
@@ -772,6 +802,7 @@ htmlInput.addEventListener("change", async () => {
 folderInput.addEventListener("change", async () => {
   if (!folderInput.files || !folderInput.files.length) return
   try {
+    setSourceMode("folder")
     clearBlobs()
     const result = await buildFolderPreview(folderInput.files)
     applyHtmlPreview(result.html, result.message, result.warn ? "warn" : "ok", "", { revealOnMobile: true })
@@ -787,6 +818,7 @@ openSourceButton.addEventListener("click", () => {
 $("reset").addEventListener("click", () => {
   state.previewRequestId += 1
   hideFrameNotices()
+  setSourceMode("url")
   urlInput.value = ""
   githubInput.value = ""
   htmlInput.value = ""
@@ -806,6 +838,10 @@ window.addEventListener("resize", queueFitDeviceShells)
 window.addEventListener("orientationchange", queueFitDeviceShells)
 
 const params = new URLSearchParams(window.location.search)
+const presetSourceMode = params.get("source")
+if (["url", "github", "html", "folder"].includes(presetSourceMode)) setSourceMode(presetSourceMode)
+else setSourceMode("url")
+
 const presetLayout = params.get("layout")
 if (["both", "ios", "android"].includes(presetLayout)) setLayout(presetLayout)
 else setLayout("both")
@@ -819,9 +855,11 @@ void detectHelper()
 if (params.get("demo") === "1") {
   loadBuiltInDemo()
 } else if (params.get("url")) {
+  setSourceMode("url")
   urlInput.value = params.get("url")
   loadUrlFromInput()
 } else if (params.get("github")) {
+  setSourceMode("github")
   githubInput.value = params.get("github")
   void loadGitHubFromInput()
 } else {
