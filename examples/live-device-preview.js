@@ -14,6 +14,7 @@ const openSourceButton = $("openSource")
 const devices = $("devices")
 const deviceShells = Array.from(document.querySelectorAll(".shell"))
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
+const orientationButtons = Array.from(document.querySelectorAll("[data-orientation]"))
 const loadDemoButton = $("loadDemo")
 
 const HELPER_ORIGINS = [
@@ -26,6 +27,8 @@ const state = {
   openUrl: "",
   helperOrigin: "",
   previewRequestId: 0,
+  layout: "both",
+  orientation: "portrait",
 }
 
 const GITHUB_ENTRY_CANDIDATES = [
@@ -100,6 +103,10 @@ const welcome = `<!doctype html>
 function setStatus(message, tone = "") {
   statusNode.textContent = message
   statusNode.className = `status${tone ? ` ${tone}` : ""}`
+}
+
+function syncDevicesClass() {
+  devices.className = `devices layout-${state.layout} orientation-${state.orientation}`
 }
 
 function setHelperStatus(message) {
@@ -721,8 +728,16 @@ async function loadGitHubFromInput() {
 }
 
 function setLayout(layout) {
-  devices.className = `devices layout-${layout}`
+  state.layout = layout
+  syncDevicesClass()
   layoutButtons.forEach((button) => button.classList.toggle("active", button.dataset.layout === layout))
+  queueFitDeviceShells()
+}
+
+function setOrientation(orientation) {
+  state.orientation = orientation
+  syncDevicesClass()
+  orientationButtons.forEach((button) => button.classList.toggle("active", button.dataset.orientation === orientation))
   queueFitDeviceShells()
 }
 
@@ -783,6 +798,10 @@ layoutButtons.forEach((button) => {
   button.addEventListener("click", () => setLayout(button.dataset.layout))
 })
 
+orientationButtons.forEach((button) => {
+  button.addEventListener("click", () => setOrientation(button.dataset.orientation))
+})
+
 window.addEventListener("resize", queueFitDeviceShells)
 window.addEventListener("orientationchange", queueFitDeviceShells)
 
@@ -790,6 +809,10 @@ const params = new URLSearchParams(window.location.search)
 const presetLayout = params.get("layout")
 if (["both", "ios", "android"].includes(presetLayout)) setLayout(presetLayout)
 else setLayout("both")
+
+const presetOrientation = params.get("orientation")
+if (["portrait", "landscape"].includes(presetOrientation)) setOrientation(presetOrientation)
+else setOrientation("portrait")
 
 void detectHelper()
 

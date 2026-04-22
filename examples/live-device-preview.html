@@ -510,6 +510,16 @@
         display: none;
       }
 
+      .devices.orientation-landscape .ioswrap {
+        --device-width: 844px;
+        --device-height: 390px;
+      }
+
+      .devices.orientation-landscape .androidwrap {
+        --device-width: 892px;
+        --device-height: 412px;
+      }
+
       @media (max-width: 1400px) {
         .app {
           grid-template-columns: 360px minmax(0, 1fr);
@@ -757,6 +767,14 @@
           </div>
         </section>
 
+        <section class="card">
+          <h2>Orientation</h2>
+          <div class="row seg">
+            <button type="button" class="ghost active" data-orientation="portrait">Portrait</button>
+            <button type="button" class="ghost" data-orientation="landscape">Landscape</button>
+          </div>
+        </section>
+
         <div id="status" class="status">Ready. Paste a URL, load a GitHub repo, upload local HTML, or load the built-in demo.</div>
         <div class="row">
           <button id="openSource" class="secondary" disabled>Open current source</button>
@@ -777,7 +795,7 @@
           </div>
         </div>
 
-        <div id="devices" class="devices layout-both">
+        <div id="devices" class="devices layout-both orientation-portrait">
           <section class="shell ioswrap">
             <div class="labelbar"><strong>iOS shell</strong><span class="caption">Dynamic Island</span></div>
             <div class="deviceframe">

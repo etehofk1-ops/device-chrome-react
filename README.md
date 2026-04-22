@@ -111,7 +111,7 @@ It supports:
 - a single local HTML file
 - a best-effort static folder preview based on `index.html`
 - shareable presets with query params like `?url=https://your-preview`, `?github=owner/repo`, or `?demo=1`
-- responsive portrait and landscape controls with auto-scaled device shells on smaller screens
+- portrait and landscape toggle controls with auto-scaled device shells on smaller screens
 
 GitHub preview order:
 - if the local helper is running and you paste a repo URL, it first tries `clone -> install -> build -> serve`
