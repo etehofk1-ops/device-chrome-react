@@ -12,6 +12,7 @@ const helperStatusNode = $("helperStatus")
 const stage = $("stage")
 const openSourceButton = $("openSource")
 const devices = $("devices")
+const deviceShells = Array.from(document.querySelectorAll(".shell"))
 const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"))
 const loadDemoButton = $("loadDemo")
 
@@ -132,6 +133,49 @@ function trackBlobFromFile(file) {
   return url
 }
 
+function getVisibleShells() {
+  return deviceShells.filter((shell) => shell.offsetParent !== null)
+}
+
+function fitDeviceShells() {
+  if (!devices) return
+
+  const visibleShells = getVisibleShells()
+  if (!visibleShells.length) return
+
+  const containerGap = parseFloat(getComputedStyle(devices).gap || "32") || 32
+  const availableWidth = Math.max(240, devices.clientWidth)
+  const viewportPadding = window.innerWidth <= 960 ? 20 : 32
+  const availableHeight = Math.max(220, window.innerHeight - devices.getBoundingClientRect().top - viewportPadding)
+
+  let totalRawWidth = 0
+  let scaleFromHeight = 1
+
+  for (const shell of visibleShells) {
+    const styles = getComputedStyle(shell)
+    const rowGap = parseFloat(styles.rowGap || "10") || 10
+    const labelHeight = shell.querySelector(".labelbar")?.offsetHeight || 0
+    const deviceWidth = parseFloat(styles.getPropertyValue("--device-width")) || 0
+    const deviceHeight = parseFloat(styles.getPropertyValue("--device-height")) || 0
+
+    totalRawWidth += deviceWidth
+    scaleFromHeight = Math.min(scaleFromHeight, (availableHeight - labelHeight - rowGap) / deviceHeight)
+  }
+
+  totalRawWidth += containerGap * Math.max(0, visibleShells.length - 1)
+
+  const scaleFromWidth = availableWidth / totalRawWidth
+  const scale = Math.max(0.32, Math.min(1, scaleFromWidth, scaleFromHeight))
+
+  for (const shell of deviceShells) {
+    shell.style.setProperty("--shell-scale", scale.toFixed(3))
+  }
+}
+
+function queueFitDeviceShells() {
+  window.requestAnimationFrame(fitDeviceShells)
+}
+
 function inspectIframeState(frame) {
   try {
     const locationValue = frame.contentWindow?.location?.href || ""
@@ -175,6 +219,7 @@ function revealPreviewOnMobile() {
   window.requestAnimationFrame(() => {
     stage.scrollIntoView({ behavior: "smooth", block: "start" })
   })
+  window.setTimeout(queueFitDeviceShells, 420)
 }
 
 function applyUrlPreview(url, message, tone = "ok", openUrl = url, options = {}) {
@@ -678,6 +723,7 @@ async function loadGitHubFromInput() {
 function setLayout(layout) {
   devices.className = `devices layout-${layout}`
   layoutButtons.forEach((button) => button.classList.toggle("active", button.dataset.layout === layout))
+  queueFitDeviceShells()
 }
 
 $("loadUrl").addEventListener("click", loadUrlFromInput)
@@ -737,6 +783,9 @@ layoutButtons.forEach((button) => {
   button.addEventListener("click", () => setLayout(button.dataset.layout))
 })
 
+window.addEventListener("resize", queueFitDeviceShells)
+window.addEventListener("orientationchange", queueFitDeviceShells)
+
 const params = new URLSearchParams(window.location.search)
 const presetLayout = params.get("layout")
 if (["both", "ios", "android"].includes(presetLayout)) setLayout(presetLayout)
@@ -755,3 +804,5 @@ if (params.get("demo") === "1") {
 } else {
   showWelcome()
 }
+
+queueFitDeviceShells()

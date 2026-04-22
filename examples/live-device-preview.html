@@ -582,6 +582,57 @@
         }
       }
 
+      @media (max-width: 960px) and (orientation: landscape) and (max-height: 640px) {
+        .app {
+          grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+          gap: 12px;
+          padding: 12px;
+          align-items: start;
+        }
+
+        .panel {
+          max-height: calc(100vh - 24px);
+          overflow: auto;
+        }
+
+        .panel,
+        .stage {
+          border-radius: 20px;
+          padding: 14px;
+        }
+
+        .stage {
+          min-height: calc(100vh - 24px);
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .head h2 {
+          font-size: 20px;
+        }
+
+        .card {
+          padding: 12px;
+        }
+
+        .row > * {
+          min-width: 120px;
+        }
+
+        .devices {
+          gap: 16px;
+          align-content: flex-start;
+        }
+
+        .labelbar {
+          padding: 0 2px;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+      }
+
       @media (max-width: 720px) {
         .panel,
         .stage {
